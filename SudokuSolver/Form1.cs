@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,8 @@ namespace SudokuSolver
     {
         ComboBox[,] GridBoxes;
         string[,] Input;
+        List<int[,]> solved;
+        int index = 0;
 
         int[,] test = {
                 {-1,2,3,4,5,6,7,8,9},
@@ -71,6 +74,16 @@ namespace SudokuSolver
                 {-1, 9, -1, 7, -1, -1, 2, -1, -1},
                 {-1, -1, 8, 6, -1, -1, -1, -1,5},
                 {1, -1, -1, -1, 2, 4, -1, -1, -1} };
+        int[,] test5 = {
+                {6, -1, -1, -1, -1, -1, 5, 3, -1},
+                {-1, -1, -1, -1, -1, 2, 7, -1, -1},
+                {5, -1, 7, -1, 9, 6, -1, 1, 8},
+                {-1, -1, 6, -1, -1, 1, -1, 8, -1},
+                {-1, 9, 8, -1, -1, -1, -1, -1, -1},
+                {-1, -1, -1, -1, 2, -1, -1, -1, -1},
+                {-1, -1, -1 ,-1, -1, -1, 9, -1, -1},
+                {-1, -1, -1, 2, -1, -1, -1, 4, 3},
+                {3, 1, -1, -1, -1, 9, -1, 6, 2} };
 
 
         public Form1()
@@ -79,6 +92,17 @@ namespace SudokuSolver
             InitializeComponent();
             setGrid(test4);
         }     
+
+
+        public int CountGrid(int[,] A)
+        {
+            int count = 0;
+            for (int i = 0; i < 9; i++)
+                for (int k = 0; k < 9; k++)
+                    if (A[i, k] != -1)
+                        count++;
+            return count;
+        }
         
         //display values of param on the form
         public void setGrid(int[,] boxes)
@@ -258,21 +282,40 @@ namespace SudokuSolver
 
         private void solveButton_Click(object sender, EventArgs e)
         {
-            Grid grid = new Grid(GetGrid());
+            if (CountGrid(GetGrid()) < 10)
+            {
+                MessageBox.Show("Please fill in atleast 10 fields. The program would run with less but would take an extremely long time", "Too few inputs", MessageBoxButtons.OK);
+                return;
+            }
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            Grid grid = new Grid(GetGrid(), parallelCheckBox.Checked);
+            
             grid.Solve();
 
             setGrid(Grid.currentGrid);
 
             if (!Grid.IsValidGrid(Grid.currentGrid))
             {
-                List<int[,]> solved = grid.BruteForceSolve();
+                solved = grid.BruteForceSolve();
                 if(solved.Count > 0)
                 {
                     setGrid(solved[0]);
+                    if(solved.Count > 1)
+                        NextButton.Enabled = true;
+                    index = 0;
                 }
+                
+                CountLabel.Text = solved.Count.ToString();
+               
 
             }
-
+            else
+            {
+                CountLabel.Text = "1";
+            }
+            sw.Stop();
+            timeLabel.Text = sw.Elapsed.ToString();
             
         }
 
@@ -301,6 +344,37 @@ namespace SudokuSolver
                 {"91", "92", "93", "94", "95", "96", "97", "98", "99"}
 
             };
+        }
+
+        private void ResetButton_Click(object sender, EventArgs e)
+        {
+            setGrid(testNul);
+            NextButton.Enabled = false;
+        }
+
+        private void NextButton_Click(object sender, EventArgs e)
+        {
+            setGrid(solved[++index % solved.Count]);
+        }
+
+        private void Preset1Button_Click(object sender, EventArgs e)
+        {
+            setGrid(test2);
+        }
+
+        private void Preset2Button_Click(object sender, EventArgs e)
+        {
+            setGrid(test3);
+        }
+
+        private void Preset3Button_Click(object sender, EventArgs e)
+        {
+            setGrid(test4);
+        }
+
+        private void Preset4Button_Click(object sender, EventArgs e)
+        {
+            setGrid(test5);
         }
     }
 }

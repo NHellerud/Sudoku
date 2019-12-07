@@ -15,14 +15,16 @@ namespace SudokuSolver
         public const int GRID_SIZE = 81;
         public static int[] possGrids = new int[9];
         public static bool changed = true;
+        public static bool parallel;
 
         static List<int[,]>[] poss = new List<int[,]>[9];
 
 
 
-        public Grid(int[,] grid)
+        public Grid(int[,] grid, bool p)
         {
             currentGrid = grid;
+            parallel = p;
             newGrid = new int[9, 9];
             boxs = new Box[9, 9];
 
@@ -105,20 +107,30 @@ namespace SudokuSolver
         {
             List<int[,]> firstStage = new List<int[,]>();
             List<int[,]> secondStage = new List<int[,]>();
-            Thread[] threads = new Thread[3];
-
-            threads[0] = new Thread(() => BruteForceRow(0));
-            threads[1] = new Thread(() => BruteForceRow(3));
-            threads[2] = new Thread(() => BruteForceRow(6));
-
-            for (int i = 0; i < 3; i++)
+            if (parallel)
             {
-                threads[i].Start();
+                Thread[] threads = new Thread[3];
+
+                threads[0] = new Thread(() => BruteForceRow(0));
+                threads[1] = new Thread(() => BruteForceRow(3));
+                threads[2] = new Thread(() => BruteForceRow(6));
+
+                for (int i = 0; i < 3; i++)
+                {
+                    threads[i].Start();
+                }
+
+                for (int i = 0; i < 3; i++)
+                {
+                    threads[i].Join();
+                }
             }
-
-            for (int i = 0; i < 3; i++)
+            else
             {
-                threads[i].Join();
+                for(int i = 0; i < 3; i++)
+                {
+                    BruteForceRow(i * 3);
+                }
             }
             foreach (int[,] sec1 in poss[0])
                 foreach (int[,] sec2 in poss[1])
